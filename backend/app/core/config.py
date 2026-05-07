@@ -14,11 +14,7 @@ class Settings(BaseSettings):
     ADMIN_KEY: str = "Saroj@Admin"
     
     # CORS Origins
-    BACKEND_CORS_ORIGINS: List[str] = [
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "https://aura-task-suite.onrender.com", # Updated to match your deployment
-    ]
+    BACKEND_CORS_ORIGINS: List[str] = ["*"] # Allow all origins for troubleshooting
 
     # Support for comma-separated string in env var
     @validator("BACKEND_CORS_ORIGINS", pre=True)

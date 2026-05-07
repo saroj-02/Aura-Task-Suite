@@ -32,9 +32,15 @@ const Dashboard = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
-      setTasks(data);
+      if (res.ok && Array.isArray(data)) {
+        setTasks(data);
+      } else {
+        console.error('Failed to fetch tasks:', data);
+        setTasks([]); // Safety fallback
+      }
     } catch (err) {
-      console.error(err);
+      console.error('Fetch Tasks Error:', err);
+      setTasks([]);
     }
   };
 
@@ -49,13 +55,13 @@ const Dashboard = () => {
       if (res.ok && Array.isArray(data)) {
         setAllUsers(data);
       } else {
-        const errMsg = data.detail || 'Unknown error';
+        const errMsg = data?.detail || 'Failed to load users';
         console.error('Failed to fetch users:', errMsg);
         setUsersError(errMsg);
         setAllUsers([]);
       }
     } catch (err) {
-      console.error(err);
+      console.error('Fetch Users Error:', err);
       setUsersError('Network error. Check if backend is running.');
       setAllUsers([]);
     } finally {
