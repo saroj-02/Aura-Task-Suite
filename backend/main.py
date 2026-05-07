@@ -10,6 +10,18 @@ app = FastAPI(
     openapi_url=f"{settings.API_V1_STR}/openapi.json"
 )
 
+import time
+from starlette.requests import Request
+
+@app.middleware("http")
+async def add_process_time_header(request: Request, call_next):
+    start_time = time.time()
+    response = await call_next(request)
+    process_time = time.time() - start_time
+    response.headers["X-Process-Time"] = str(process_time)
+    print(f"Request: {request.method} {request.url.path} - Time: {process_time:.4f}s")
+    return response
+
 # Set all CORS enabled origins
 if settings.BACKEND_CORS_ORIGINS:
     origins = [str(origin) for origin in settings.BACKEND_CORS_ORIGINS]
@@ -27,6 +39,10 @@ app.include_router(api_router, prefix=settings.API_V1_STR)
 @app.get("/")
 def root():
     return {"message": "Welcome to Aura Task Suite API", "docs": "/docs"}
+
+@app.get("/health")
+def health_check():
+    return {"status": "ok", "message": "Server is responsive"}
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
