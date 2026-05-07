@@ -1,9 +1,13 @@
 from motor.motor_asyncio import AsyncIOMotorClient
 from app.core.config import settings
 
-client = AsyncIOMotorClient(settings.MONGODB_URL)
+client = AsyncIOMotorClient(settings.MONGODB_URL, serverSelectionTimeoutMS=5000)
 db = client[settings.DATABASE_NAME]
 
 async def get_db():
-    client = AsyncIOMotorClient(settings.MONGODB_URL)
-    return client[settings.DATABASE_NAME]
+    # We use a single client instance for efficiency
+    try:
+        yield db
+    except Exception as e:
+        print(f"Database error: {e}")
+        raise
