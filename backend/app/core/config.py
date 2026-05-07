@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     BACKEND_CORS_ORIGINS: List[str] = [
         "http://localhost:5173",
         "http://127.0.0.1:5173",
-        "https://aura-frontend.onrender.com", # Added default production URL
+        "https://aura-task-suite.onrender.com", # Updated to match your deployment
     ]
 
     # Support for comma-separated string in env var
