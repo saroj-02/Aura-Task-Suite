@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Plus, LogOut, CheckCircle2, Clock, AlertCircle, Trash2, Pencil, X, Save, Users } from 'lucide-react';
+import API_BASE_URL from '../config';
 
 const Dashboard = () => {
   const { user, token, logout } = useAuth();
@@ -27,7 +28,7 @@ const Dashboard = () => {
 
   const fetchTasks = async () => {
     try {
-      const res = await fetch('http://127.0.0.1:8000/api/v1/tasks/', {
+      const res = await fetch(`${API_BASE_URL}/api/v1/tasks/`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
@@ -41,7 +42,7 @@ const Dashboard = () => {
     setUsersLoading(true);
     setUsersError('');
     try {
-      const res = await fetch('http://127.0.0.1:8000/api/v1/users', {
+      const res = await fetch(`${API_BASE_URL}/api/v1/users`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
@@ -66,7 +67,7 @@ const Dashboard = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await fetch('http://127.0.0.1:8000/api/v1/tasks/', {
+      const res = await fetch(`${API_BASE_URL}/api/v1/tasks/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -88,7 +89,7 @@ const Dashboard = () => {
 
   const deleteTask = async (id) => {
     try {
-      await fetch(`http://127.0.0.1:8000/api/v1/tasks/${id}`, {
+      await fetch(`${API_BASE_URL}/api/v1/tasks/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -100,7 +101,7 @@ const Dashboard = () => {
 
   const updateStatus = async (id, status) => {
     try {
-      await fetch(`http://127.0.0.1:8000/api/v1/tasks/${id}`, {
+      await fetch(`${API_BASE_URL}/api/v1/tasks/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -123,7 +124,7 @@ const Dashboard = () => {
 
   const saveEdit = async (id) => {
     try {
-      const res = await fetch(`http://127.0.0.1:8000/api/v1/tasks/${id}`, {
+      const res = await fetch(`${API_BASE_URL}/api/v1/tasks/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

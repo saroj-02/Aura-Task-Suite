@@ -1,0 +1,29 @@
+services:
+  # Frontend: Static Site
+  - type: web
+    name: aura-frontend
+    runtime: node
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: aura-backend
+          property: host
+
+  # Backend: FastAPI Service
+  - type: web
+    name: aura-backend
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: MONGODB_URL
+        value: mongodb+srv://sarojpadhi28:IBqTzLV0d2TBTuDj@cluster0.n9zjrky.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
+      - key: BACKEND_CORS_ORIGINS
+        value: "*" # Better to set specific URL later
+      - key: SECRET_KEY
+        generateValue: true

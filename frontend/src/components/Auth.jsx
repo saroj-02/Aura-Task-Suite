@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { LogIn, UserPlus, ShieldCheck } from 'lucide-react';
+import API_BASE_URL from '../config';
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -32,7 +33,7 @@ const Auth = () => {
         body = JSON.stringify({ email, password, full_name: fullName, role, admin_key: adminKey });
       }
 
-      const res = await fetch(`http://127.0.0.1:8000/api/v1${endpoint}`, {
+      const res = await fetch(`${API_BASE_URL}/api/v1${endpoint}`, {
         method: 'POST',
         headers,
         body,

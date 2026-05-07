@@ -1,0 +1,13 @@
+{
+  "name": "aura-task-suite",
+  "version": "1.0.0",
+  "description": "Aura Task Suite - Full Stack Project",
+  "private": true,
+  "scripts": {
+    "install-frontend": "cd frontend && npm install",
+    "build-frontend": "cd frontend && npm run build",
+    "install": "npm run install-frontend",
+    "build": "npm run build-frontend",
+    "start": "cd frontend && npm run preview"
+  }
+}
