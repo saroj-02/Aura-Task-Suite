@@ -11,11 +11,13 @@ const Auth = () => {
   const [role, setRole] = useState('user');
   const [adminKey, setAdminKey] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const { login } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setLoading(true);
     const endpoint = isLogin ? '/login' : '/register';
     
     try {
@@ -33,6 +35,8 @@ const Auth = () => {
         body = JSON.stringify({ email, password, full_name: fullName, role, admin_key: adminKey });
       }
 
+      console.log(`Attempting ${isLogin ? 'Login' : 'Register'} at: ${API_BASE_URL}/api/v1${endpoint}`);
+
       const res = await fetch(`${API_BASE_URL}/api/v1${endpoint}`, {
         method: 'POST',
         headers,
@@ -49,7 +53,12 @@ const Auth = () => {
         setError('Registration successful! Please login.');
       }
     } catch (err) {
-      setError(err.message);
+      console.error('Auth Error:', err);
+      setError(err.message === 'Failed to fetch' 
+        ? 'Cannot reach the backend. Please check your internet or if the backend is running.' 
+        : err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -113,8 +122,14 @@ const Auth = () => {
             <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
           </div>
           
-          <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>
-            {isLogin ? <><LogIn size={20} /> Sign In</> : <><UserPlus size={20} /> Create Account</>}
+          <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={loading}>
+            {loading ? (
+              'Processing...'
+            ) : isLogin ? (
+              <><LogIn size={20} /> Sign In</>
+            ) : (
+              <><UserPlus size={20} /> Create Account</>
+            )}
           </button>
         </form>
 
