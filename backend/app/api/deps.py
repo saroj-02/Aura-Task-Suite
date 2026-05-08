@@ -6,6 +6,7 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 from app.core.config import settings
 from app.db.session import get_db
 from app.schemas.user import TokenPayload
+from bson import ObjectId
 
 import time
 from typing import Dict, Tuple
@@ -17,7 +18,7 @@ reusable_oauth2 = OAuth2PasswordBearer(
 # In-memory cache for user data to reduce DB lookups
 # Format: {token_sub: (user_data, expiry_time)}
 USER_CACHE: Dict[str, Tuple[Any, float]] = {}
-CACHE_TTL = 10  # Seconds
+CACHE_TTL = 300  # Increase to 5 minutes for better performance
 
 async def get_current_user(
     db: AsyncIOMotorDatabase = Depends(get_db), 
@@ -41,13 +42,16 @@ async def get_current_user(
         if now < expiry:
             return cached_user
             
-    user = await db.users.find_one({
-        "$or": [
-            {"email": token_data.sub},
-            {"id": token_data.sub}
-        ]
-    })
+    # Try searching by email first (most common sub)
+    user = await db.users.find_one({"email": token_data.sub})
     
+    # If not found by email, try searching by _id (if sub looks like an ObjectId)
+    if not user:
+        try:
+            user = await db.users.find_one({"_id": ObjectId(token_data.sub)})
+        except:
+            pass
+            
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     

@@ -53,12 +53,23 @@ def root():
 @app.get("/health")
 async def health_check():
     from app.db.session import client
+    import time
+    start_time = time.time()
     try:
         # Ping database to check connectivity
         await client.admin.command('ping')
-        return {"status": "ok", "message": "Server and Database are responsive"}
+        latency = (time.time() - start_time) * 1000
+        return {
+            "status": "ok", 
+            "message": "Server and Database are responsive",
+            "db_latency_ms": round(latency, 2)
+        }
     except Exception as e:
-        return {"status": "error", "message": f"Database connection failed: {str(e)}"}, 500
+        from fastapi.responses import JSONResponse
+        return JSONResponse(
+            status_code=500,
+            content={"status": "error", "message": f"Database connection failed: {str(e)}"}
+        )
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

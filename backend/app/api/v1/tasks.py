@@ -21,7 +21,7 @@ async def read_tasks(
     if current_user.get("role") != "admin":
         query["owner_id"] = str(current_user["id"])
     
-    cursor = db.tasks.find(query).skip(skip).limit(limit)
+    cursor = db.tasks.find(query).sort("created_at", -1).skip(skip).limit(limit)
     tasks = await cursor.to_list(length=limit)
     
     for task in tasks:
