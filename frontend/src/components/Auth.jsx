@@ -22,7 +22,7 @@ const Auth = () => {
     
     // Create a controller to handle timeouts
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+    const timeoutId = setTimeout(() => controller.abort(), 90000); // 90s timeout for cold starts
 
     try {
       let body;
@@ -58,10 +58,10 @@ const Auth = () => {
     } catch (err) {
       console.error('Auth Error:', err);
       if (err.name === 'AbortError') {
-        setError('Server is taking too long to respond. It might be waking up. Please try again in a few seconds.');
+        setError('Server is still waking up (Render cold start). Please wait 30 seconds and try again.');
       } else {
         setError(err.message === 'Failed to fetch' 
-          ? 'Cannot reach the backend. If you just deployed, wait 1 minute for the server to wake up.' 
+          ? 'Backend is still waking up. Please wait 10-20 seconds and click login again.' 
           : err.message);
       }
     } finally {
@@ -80,7 +80,8 @@ const Auth = () => {
 
         {loading && (
           <div style={{ color: 'var(--primary)', textAlign: 'center', marginBottom: '15px', fontSize: '0.8rem' }} className="animate-pulse">
-            Connecting to secure server... (This may take a moment if server is waking up)
+            Connecting to Aura Secure Server... <br/>
+            <span style={{ fontSize: '0.7rem', opacity: 0.8 }}>(Render Free Tier might take 60-90s to wake up)</span>
           </div>
         )}
 

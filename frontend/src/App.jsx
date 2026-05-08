@@ -10,8 +10,19 @@ const AppContent = () => {
 
   // Wake up the backend immediately on load
   useEffect(() => {
-    console.log("Pre-warming backend...");
-    fetch(`${API_BASE_URL}/health`).catch(() => {});
+    const wakeBackend = async () => {
+      console.log("Pre-warming backend...");
+      try {
+        await fetch(`${API_BASE_URL}/health`);
+        console.log("Backend is awake!");
+      } catch (e) {
+        console.log("Backend still waking up...");
+      }
+    };
+    wakeBackend();
+    // Retry every 20s if not awake
+    const interval = setInterval(wakeBackend, 20000);
+    return () => clearInterval(interval);
   }, []);
 
   if (loading) {

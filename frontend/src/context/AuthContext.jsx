@@ -24,11 +24,15 @@ export const AuthProvider = ({ children }) => {
       if (res.ok) {
         const data = await res.json();
         setUser(data);
-      } else {
+      } else if (res.status === 401 || res.status === 403) {
+        // Only logout if token is explicitly invalid
         logout();
+      } else {
+        // Server might be waking up or having temporary issues
+        console.warn(`Server responded with ${res.status}. Not logging out yet.`);
       }
     } catch (err) {
-      console.error(err);
+      console.error("Fetch user error (backend might be waking up):", err);
     } finally {
       setLoading(false);
     }
