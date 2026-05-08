@@ -80,8 +80,8 @@ const Auth = () => {
 
         {loading && (
           <div style={{ color: 'var(--primary)', textAlign: 'center', marginBottom: '15px', fontSize: '0.8rem' }} className="animate-pulse">
-            Connecting to Aura Secure Server... <br/>
-            <span style={{ fontSize: '0.7rem', opacity: 0.8 }}>(Render Free Tier might take 60-90s to wake up)</span>
+            Establishing secure connection to Aura... <br/>
+            <span style={{ fontSize: '0.7rem', opacity: 0.8 }}>Performing encrypted handshake</span>
           </div>
         )}
 
