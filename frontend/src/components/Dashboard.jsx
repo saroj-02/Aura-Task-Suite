@@ -5,7 +5,10 @@ import API_BASE_URL from '../config';
 
 const Dashboard = () => {
   const { user, token, logout } = useAuth();
-  const [tasks, setTasks] = useState([]);
+  const [tasks, setTasks] = useState(() => {
+    const cached = localStorage.getItem('cached_tasks');
+    return cached ? JSON.parse(cached) : [];
+  });
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState('medium');
@@ -15,7 +18,10 @@ const Dashboard = () => {
   const [editDescription, setEditDescription] = useState('');
   const [editPriority, setEditPriority] = useState('medium');
   const [activeTab, setActiveTab] = useState('tasks');
-  const [allUsers, setAllUsers] = useState([]);
+  const [allUsers, setAllUsers] = useState(() => {
+    const cached = localStorage.getItem('cached_users');
+    return cached ? JSON.parse(cached) : [];
+  });
   const [usersLoading, setUsersLoading] = useState(false);
   const [usersError, setUsersError] = useState('');
 
@@ -27,6 +33,7 @@ const Dashboard = () => {
   }, [user]);
 
   const fetchTasks = async () => {
+    setLoading(true);
     try {
       const res = await fetch(`${API_BASE_URL}/api/v1/tasks/`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -34,13 +41,14 @@ const Dashboard = () => {
       const data = await res.json();
       if (res.ok && Array.isArray(data)) {
         setTasks(data);
+        localStorage.setItem('cached_tasks', JSON.stringify(data));
       } else {
         console.error('Failed to fetch tasks:', data);
-        setTasks([]); // Safety fallback
       }
     } catch (err) {
-      console.error('Fetch Tasks Error:', err);
-      setTasks([]);
+      console.error('Fetch Tasks Error (Using Cache):', err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -54,16 +62,14 @@ const Dashboard = () => {
       const data = await res.json();
       if (res.ok && Array.isArray(data)) {
         setAllUsers(data);
+        localStorage.setItem('cached_users', JSON.stringify(data));
       } else {
         const errMsg = data?.detail || 'Failed to load users';
         console.error('Failed to fetch users:', errMsg);
         setUsersError(errMsg);
-        setAllUsers([]);
       }
     } catch (err) {
-      console.error('Fetch Users Error:', err);
-      setUsersError('Network error. Check if backend is running.');
-      setAllUsers([]);
+      console.error('Fetch Users Error (Using Cache):', err);
     } finally {
       setUsersLoading(false);
     }
@@ -207,7 +213,10 @@ const Dashboard = () => {
           <h1 style={{ fontSize: '2.5rem', background: 'linear-gradient(to right, #fff, var(--text-muted))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
             Aura Workspace
           </h1>
-          <p style={{ color: 'var(--text-muted)' }}>Welcome back, <span style={{ color: 'var(--primary)', fontWeight: '600' }}>{user?.full_name}</span> {user?.role === 'admin' && '(Admin)'}</p>
+          <p style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            Welcome back, <span style={{ color: 'var(--primary)', fontWeight: '600' }}>{user?.full_name}</span> {user?.role === 'admin' && '(Admin)'}
+            {loading && <span className="animate-pulse" style={{ fontSize: '0.7rem', color: 'var(--primary)', background: 'rgba(99, 102, 241, 0.1)', padding: '2px 8px', borderRadius: '4px' }}>Syncing...</span>}
+          </p>
         </div>
         <div style={{ display: 'flex', gap: '15px' }}>
           {user?.role === 'admin' && (
