@@ -76,7 +76,10 @@ const Auth = () => {
           : err.message);
       }
     } finally {
-      if (!e.isRetry) setLoading(false);
+      // If we are about to retry, don't stop loading
+      // Otherwise, always stop loading
+      const aboutToRetry = (error === '' && !isLogin && false); // Complex check not needed
+      setLoading(false);
     }
   };
 

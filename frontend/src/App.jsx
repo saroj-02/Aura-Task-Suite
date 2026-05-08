@@ -25,7 +25,8 @@ const AppContent = () => {
     return () => clearInterval(interval);
   }, []);
 
-  if (loading) {
+  // Only show global loading if we are during initial session check and have no token
+  if (loading && !token) {
     return (
       <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div className="animate-pulse" style={{ color: 'var(--primary)', fontWeight: '600' }}>Loading Aura...</div>
