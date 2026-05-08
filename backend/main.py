@@ -71,5 +71,25 @@ async def health_check():
             content={"status": "error", "message": f"Database connection failed: {str(e)}"}
         )
 
+import asyncio
+import httpx
+
+@app.on_event("startup")
+async def startup_event():
+    # Start a background task to ping itself every 10 minutes
+    # This prevents Render from sleeping as long as the server is active
+    async def keep_alive():
+        client = httpx.AsyncClient()
+        while True:
+            await asyncio.sleep(600) # 10 minutes
+            try:
+                # Use localhost to ping itself internally
+                await client.get("http://0.0.0.0:8000/health")
+                # Also ping the external URL if possible (optional)
+            except Exception:
+                pass
+    
+    asyncio.create_task(keep_alive())
+
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

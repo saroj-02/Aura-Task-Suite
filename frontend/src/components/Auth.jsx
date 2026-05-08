@@ -57,15 +57,26 @@ const Auth = () => {
       }
     } catch (err) {
       console.error('Auth Error:', err);
+      
+      // Auto-retry once if it's a cold start error
+      if (err.message === 'Failed to fetch' && !e.isRetry) {
+        console.log("Detecting cold start, retrying in 2 seconds...");
+        setTimeout(() => {
+          const fakeEvent = { preventDefault: () => {}, isRetry: true };
+          handleSubmit(fakeEvent);
+        }, 2000);
+        return;
+      }
+
       if (err.name === 'AbortError') {
-        setError('Server is still waking up (Render cold start). Please wait 30 seconds and try again.');
+        setError('Server is still waking up. Please wait a few more seconds...');
       } else {
         setError(err.message === 'Failed to fetch' 
-          ? 'Backend is still waking up. Please wait 10-20 seconds and click login again.' 
+          ? 'Backend is waking up... Please wait 10 seconds and click again.' 
           : err.message);
       }
     } finally {
-      setLoading(false);
+      if (!e.isRetry) setLoading(false);
     }
   };
 
