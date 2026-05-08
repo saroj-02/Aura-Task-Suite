@@ -34,7 +34,15 @@ if settings.BACKEND_CORS_ORIGINS:
         allow_headers=["*"],
     )
 
+from fastapi.staticfiles import StaticFiles
+import os
+
 app.include_router(api_router, prefix=settings.API_V1_STR)
+
+# Serve Frontend Static Files
+frontend_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend", "dist")
+if os.path.exists(frontend_path):
+    app.mount("/", StaticFiles(directory=frontend_path, html=True), name="static")
 
 @app.get("/")
 def root():

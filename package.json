@@ -11,6 +11,6 @@
     "dev:frontend": "cd frontend && npm run dev",
     "dev:backend": "cd backend && .\\venv\\Scripts\\python main.py",
     "dev": "npm run dev:frontend",
-    "start": "cd frontend && npm run preview"
+    "start": "cd frontend && npm run build && npm run preview"
   }
 }
