@@ -28,11 +28,13 @@ async def get_current_user(
     
     # MongoDB uses _id. If sub is email or string ID, we find it.
     # In my implementation, I'll store 'id' as a field or use the email as unique identifier.
-    user = await db.users.find_one({"email": token_data.sub})
-    if not user:
-        # Try finding by string ID if sub was an ID
-        user = await db.users.find_one({"id": token_data.sub})
-        
+    user = await db.users.find_one({
+        "$or": [
+            {"email": token_data.sub},
+            {"id": token_data.sub}
+        ]
+    })
+    
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     

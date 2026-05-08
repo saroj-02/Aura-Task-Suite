@@ -1,6 +1,7 @@
 from typing import Any, List
 from fastapi import APIRouter, Depends, HTTPException
 from motor.motor_asyncio import AsyncIOMotorDatabase
+from pymongo import ReturnDocument
 from bson import ObjectId
 from datetime import datetime, timezone, timedelta
 from app.api import deps
@@ -67,9 +68,15 @@ async def update_task(
     update_data = task_in.model_dump(exclude_unset=True)
     update_data["updated_at"] = datetime.now(timezone.utc) + timedelta(hours=5, minutes=30)
     
-    await db.tasks.update_one({"_id": obj_id}, {"$set": update_data})
+    updated_task = await db.tasks.find_one_and_update(
+        {"_id": obj_id},
+        {"$set": update_data},
+        return_document=ReturnDocument.AFTER
+    )
     
-    updated_task = await db.tasks.find_one({"_id": obj_id})
+    if not updated_task:
+        raise HTTPException(status_code=404, detail="Task not found")
+        
     updated_task["id"] = str(updated_task["_id"])
     return updated_task
 
@@ -92,6 +99,9 @@ async def delete_task(
     if current_user.get("role") != "admin" and task.get("owner_id") != str(current_user["id"]):
         raise HTTPException(status_code=403, detail="Not enough permissions")
     
-    await db.tasks.delete_one({"_id": obj_id})
+    task = await db.tasks.find_one_and_delete({"_id": obj_id})
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    
     task["id"] = str(task["_id"])
     return task
