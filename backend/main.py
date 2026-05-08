@@ -51,8 +51,14 @@ def root():
     return {"message": "Welcome to Aura Task Suite API", "docs": "/docs"}
 
 @app.get("/health")
-def health_check():
-    return {"status": "ok", "message": "Server is responsive"}
+async def health_check():
+    from app.db.session import client
+    try:
+        # Ping database to check connectivity
+        await client.admin.command('ping')
+        return {"status": "ok", "message": "Server and Database are responsive"}
+    except Exception as e:
+        return {"status": "error", "message": f"Database connection failed: {str(e)}"}, 500
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

@@ -1,11 +1,18 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Auth from './components/Auth';
 import Dashboard from './components/Dashboard';
 import Footer from './components/Footer';
+import API_BASE_URL from './config';
 
 const AppContent = () => {
   const { token, loading } = useAuth();
+
+  // Wake up the backend immediately on load
+  useEffect(() => {
+    console.log("Pre-warming backend...");
+    fetch(`${API_BASE_URL}/health`).catch(() => {});
+  }, []);
 
   if (loading) {
     return (

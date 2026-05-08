@@ -20,29 +20,32 @@ const Auth = () => {
     setLoading(true);
     const endpoint = isLogin ? '/login' : '/register';
     
+    // Create a controller to handle timeouts
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+
     try {
       let body;
       let headers = { 'Content-Type': 'application/json' };
 
       if (isLogin) {
-        // FastAPI OAuth2 expects form-data for login
         const formData = new FormData();
         formData.append('username', email);
         formData.append('password', password);
         body = formData;
-        headers = {}; // Let browser set boundary
+        headers = {};
       } else {
         body = JSON.stringify({ email, password, full_name: fullName, role, admin_key: adminKey });
       }
-
-      console.log(`Attempting ${isLogin ? 'Login' : 'Register'} at: ${API_BASE_URL}/api/v1${endpoint}`);
 
       const res = await fetch(`${API_BASE_URL}/api/v1${endpoint}`, {
         method: 'POST',
         headers,
         body,
+        signal: controller.signal
       });
 
+      clearTimeout(timeoutId);
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || 'Something went wrong');
 
@@ -54,9 +57,13 @@ const Auth = () => {
       }
     } catch (err) {
       console.error('Auth Error:', err);
-      setError(err.message === 'Failed to fetch' 
-        ? 'Cannot reach the backend. Please check your internet or if the backend is running.' 
-        : err.message);
+      if (err.name === 'AbortError') {
+        setError('Server is taking too long to respond. It might be waking up. Please try again in a few seconds.');
+      } else {
+        setError(err.message === 'Failed to fetch' 
+          ? 'Cannot reach the backend. If you just deployed, wait 1 minute for the server to wake up.' 
+          : err.message);
+      }
     } finally {
       setLoading(false);
     }
@@ -70,6 +77,12 @@ const Auth = () => {
           <h2 style={{ fontSize: '2rem' }}>{isLogin ? 'Welcome Back' : 'Join Aura'}</h2>
           <p style={{ color: 'var(--text-muted)' }}>Experience the next level of task management</p>
         </div>
+
+        {loading && (
+          <div style={{ color: 'var(--primary)', textAlign: 'center', marginBottom: '15px', fontSize: '0.8rem' }} className="animate-pulse">
+            Connecting to secure server... (This may take a moment if server is waking up)
+          </div>
+        )}
 
         {error && (
           <div style={{ 
