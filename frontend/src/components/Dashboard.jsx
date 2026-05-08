@@ -72,6 +72,23 @@ const Dashboard = () => {
   const createTask = async (e) => {
     e.preventDefault();
     setLoading(true);
+    
+    // Create a temporary task object for immediate feedback
+    const tempTask = {
+      id: 'temp-' + Date.now(),
+      title,
+      description,
+      priority,
+      status: 'todo',
+      created_at: new Date().toISOString(),
+      is_optimistic: true // Mark as pending
+    };
+    
+    // Update UI instantly
+    setTasks(prev => [tempTask, ...prev]);
+    setTitle('');
+    setDescription('');
+
     try {
       const res = await fetch(`${API_BASE_URL}/api/v1/tasks/`, {
         method: 'POST',
@@ -81,12 +98,17 @@ const Dashboard = () => {
         },
         body: JSON.stringify({ title, description, priority }),
       });
+      const data = await res.json();
       if (res.ok) {
-        setTitle('');
-        setDescription('');
-        fetchTasks();
+        // Replace temp task with real one from server
+        setTasks(prev => prev.map(t => t.id === tempTask.id ? data : t));
+      } else {
+        // Remove temp task if failed
+        setTasks(prev => prev.filter(t => t.id !== tempTask.id));
+        alert('Failed to create task');
       }
     } catch (err) {
+      setTasks(prev => prev.filter(t => t.id !== tempTask.id));
       console.error(err);
     } finally {
       setLoading(false);
@@ -94,20 +116,33 @@ const Dashboard = () => {
   };
 
   const deleteTask = async (id) => {
+    // Optimistic Delete
+    const originalTasks = [...tasks];
+    setTasks(prev => prev.filter(t => t.id !== id));
+
     try {
-      await fetch(`${API_BASE_URL}/api/v1/tasks/${id}`, {
+      const res = await fetch(`${API_BASE_URL}/api/v1/tasks/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
-      fetchTasks();
+      if (!res.ok) {
+        // Revert if server fails
+        setTasks(originalTasks);
+        alert('Failed to delete task');
+      }
     } catch (err) {
+      setTasks(originalTasks);
       console.error(err);
     }
   };
 
   const updateStatus = async (id, status) => {
+    // Optimistic Status Update
+    const originalTasks = [...tasks];
+    setTasks(prev => prev.map(t => t.id === id ? { ...t, status } : t));
+
     try {
-      await fetch(`${API_BASE_URL}/api/v1/tasks/${id}`, {
+      const res = await fetch(`${API_BASE_URL}/api/v1/tasks/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -115,8 +150,11 @@ const Dashboard = () => {
         },
         body: JSON.stringify({ status }),
       });
-      fetchTasks();
+      if (!res.ok) {
+        setTasks(originalTasks);
+      }
     } catch (err) {
+      setTasks(originalTasks);
       console.error(err);
     }
   };
@@ -129,6 +167,12 @@ const Dashboard = () => {
   };
 
   const saveEdit = async (id) => {
+    // Optimistic Edit
+    const originalTasks = [...tasks];
+    const updatedData = { title: editTitle, description: editDescription, priority: editPriority };
+    setTasks(prev => prev.map(t => t.id === id ? { ...t, ...updatedData } : t));
+    setEditingTaskId(null);
+
     try {
       const res = await fetch(`${API_BASE_URL}/api/v1/tasks/${id}`, {
         method: 'PUT',
@@ -136,17 +180,14 @@ const Dashboard = () => {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ 
-          title: editTitle, 
-          description: editDescription, 
-          priority: editPriority 
-        }),
+        body: JSON.stringify(updatedData),
       });
-      if (res.ok) {
-        setEditingTaskId(null);
-        fetchTasks();
+      if (!res.ok) {
+        setTasks(originalTasks);
+        alert('Failed to save changes');
       }
     } catch (err) {
+      setTasks(originalTasks);
       console.error(err);
     }
   };
