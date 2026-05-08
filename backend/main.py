@@ -15,12 +15,14 @@ from starlette.requests import Request
 
 @app.middleware("http")
 async def add_process_time_header(request: Request, call_next):
-    start_time = time.time()
-    response = await call_next(request)
-    process_time = time.time() - start_time
-    response.headers["X-Process-Time"] = str(process_time)
-    print(f"Request: {request.method} {request.url.path} - Time: {process_time:.4f}s")
-    return response
+    # Only print for non-static requests to reduce console noise
+    if request.url.path.startswith("/api"):
+        start_time = time.time()
+        response = await call_next(request)
+        process_time = time.time() - start_time
+        response.headers["X-Process-Time"] = str(process_time)
+        return response
+    return await call_next(request)
 
 # Set all CORS enabled origins
 if settings.BACKEND_CORS_ORIGINS:

@@ -6,7 +6,10 @@ client = AsyncIOMotorClient(
     serverSelectionTimeoutMS=5000,
     minPoolSize=10,
     maxPoolSize=100,
-    retryWrites=True
+    waitQueueTimeoutMS=10000,
+    heartbeatFrequencyMS=10000,
+    retryWrites=True,
+    retryReads=True
 )
 db = client[settings.DATABASE_NAME]
 

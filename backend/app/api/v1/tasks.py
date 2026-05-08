@@ -58,24 +58,26 @@ async def update_task(
     except:
         raise HTTPException(status_code=400, detail="Invalid task ID format")
         
-    task = await db.tasks.find_one({"_id": obj_id})
-    if not task:
-        raise HTTPException(status_code=404, detail="Task not found")
-    
-    if current_user.get("role") != "admin" and task.get("owner_id") != str(current_user["id"]):
-        raise HTTPException(status_code=403, detail="Not enough permissions")
+    # Combine existence and ownership check into one query for speed
+    query = {"_id": obj_id}
+    if current_user.get("role") != "admin":
+        query["owner_id"] = str(current_user["id"])
     
     update_data = task_in.model_dump(exclude_unset=True)
     update_data["updated_at"] = datetime.now(timezone.utc) + timedelta(hours=5, minutes=30)
     
     updated_task = await db.tasks.find_one_and_update(
-        {"_id": obj_id},
+        query,
         {"$set": update_data},
         return_document=ReturnDocument.AFTER
     )
     
     if not updated_task:
-        raise HTTPException(status_code=404, detail="Task not found")
+        # One extra check ONLY on failure to distinguish 404 from 403
+        exists = await db.tasks.find_one({"_id": obj_id})
+        if not exists:
+            raise HTTPException(status_code=404, detail="Task not found")
+        raise HTTPException(status_code=403, detail="Not enough permissions")
         
     updated_task["id"] = str(updated_task["_id"])
     return updated_task
@@ -92,16 +94,19 @@ async def delete_task(
     except:
         raise HTTPException(status_code=400, detail="Invalid task ID format")
 
-    task = await db.tasks.find_one({"_id": obj_id})
-    if not task:
-        raise HTTPException(status_code=404, detail="Task not found")
+    # Combine existence and ownership check into one query
+    query = {"_id": obj_id}
+    if current_user.get("role") != "admin":
+        query["owner_id"] = str(current_user["id"])
+        
+    task = await db.tasks.find_one_and_delete(query)
     
-    if current_user.get("role") != "admin" and task.get("owner_id") != str(current_user["id"]):
+    if not task:
+        # Check if missing or permission issue
+        exists = await db.tasks.find_one({"_id": obj_id})
+        if not exists:
+            raise HTTPException(status_code=404, detail="Task not found")
         raise HTTPException(status_code=403, detail="Not enough permissions")
-    
-    task = await db.tasks.find_one_and_delete({"_id": obj_id})
-    if not task:
-        raise HTTPException(status_code=404, detail="Task not found")
     
     task["id"] = str(task["_id"])
     return task

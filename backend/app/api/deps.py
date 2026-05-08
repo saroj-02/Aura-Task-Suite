@@ -7,9 +7,17 @@ from app.core.config import settings
 from app.db.session import get_db
 from app.schemas.user import TokenPayload
 
+import time
+from typing import Dict, Tuple
+
 reusable_oauth2 = OAuth2PasswordBearer(
     tokenUrl=f"{settings.API_V1_STR}/login"
 )
+
+# In-memory cache for user data to reduce DB lookups
+# Format: {token_sub: (user_data, expiry_time)}
+USER_CACHE: Dict[str, Tuple[Any, float]] = {}
+CACHE_TTL = 10  # Seconds
 
 async def get_current_user(
     db: AsyncIOMotorDatabase = Depends(get_db), 
@@ -26,8 +34,13 @@ async def get_current_user(
             detail="Could not validate credentials",
         )
     
-    # MongoDB uses _id. If sub is email or string ID, we find it.
-    # In my implementation, I'll store 'id' as a field or use the email as unique identifier.
+    # Check cache first
+    now = time.time()
+    if token_data.sub in USER_CACHE:
+        cached_user, expiry = USER_CACHE[token_data.sub]
+        if now < expiry:
+            return cached_user
+            
     user = await db.users.find_one({
         "$or": [
             {"email": token_data.sub},
@@ -38,8 +51,11 @@ async def get_current_user(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    # Convert _id to string for consistency if needed, but here we return the dict
     user["id"] = str(user["_id"])
+    
+    # Store in cache
+    USER_CACHE[token_data.sub] = (user, now + CACHE_TTL)
+    
     return user
 
 async def get_current_active_user(
