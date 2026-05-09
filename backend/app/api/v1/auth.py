@@ -43,6 +43,7 @@ async def register(
     return user_dict
 
 @router.post("/login", response_model=Token)
+@router.post("/login/", response_model=Token, include_in_schema=False)
 async def login(
     db: AsyncIOMotorDatabase = Depends(get_db),
     form_data: OAuth2PasswordRequestForm = Depends()

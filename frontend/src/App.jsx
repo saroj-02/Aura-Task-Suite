@@ -11,9 +11,10 @@ const AppContent = () => {
   // Wake up the backend immediately on load
   useEffect(() => {
     const wakeBackend = async () => {
-      console.log("Pre-warming backend...");
       try {
-        const res = await fetch(`${API_BASE_URL}/health`);
+        const url = `${API_BASE_URL}/health`;
+        console.log(`Trying to wake up: ${url || '(Relative)/health'}`);
+        const res = await fetch(url);
         const data = await res.json();
         if (data && data.status === 'ok') {
           console.log("Backend is awake and responsive!");
