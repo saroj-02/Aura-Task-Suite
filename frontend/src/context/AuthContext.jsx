@@ -37,7 +37,12 @@ export const AuthProvider = ({ children }) => {
         console.warn(`Server responded with ${res.status}. Not logging out yet.`);
       }
     } catch (err) {
-      console.error("Fetch user error (backend might be waking up):", err);
+      // Backend might be waking up, log as warning instead of error to keep console clean
+      if (err.name === 'AbortError') {
+        console.warn("Fetch user aborted");
+      } else {
+        console.warn("Fetch user error (backend might be waking up):", err.message);
+      }
     } finally {
       setLoading(false);
     }

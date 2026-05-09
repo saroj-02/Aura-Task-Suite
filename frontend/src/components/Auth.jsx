@@ -22,7 +22,8 @@ const Auth = () => {
     
     // Create a controller to handle timeouts
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 90000); // 90s timeout for cold starts
+    // Use a specific reason to avoid "signal is aborted without reason" message
+    const timeoutId = setTimeout(() => controller.abort("Request timed out"), 90000); // 90s timeout for cold starts
 
     try {
       let body;
@@ -56,11 +57,20 @@ const Auth = () => {
         setError('Registration successful! Please login.');
       }
     } catch (err) {
-      console.error('Auth Error:', err);
+      // Clear timeout in case of error
+      clearTimeout(timeoutId);
+
+      // Don't log AbortErrors as full errors if we handle them
+      if (err.name === 'AbortError') {
+        console.warn('Auth Request Aborted:', err.message);
+      } else {
+        console.error('Auth Error:', err);
+      }
       
-      // Auto-retry once if it's a cold start error
-      if (err.message === 'Failed to fetch' && !e.isRetry) {
-        console.log("Detecting cold start, retrying in 2 seconds...");
+      // Auto-retry once if it's a cold start error or timeout
+      const isColdStart = err.message === 'Failed to fetch' || err.name === 'AbortError';
+      if (isColdStart && !e.isRetry) {
+        console.log("Detecting backend cold start/timeout, retrying in 2 seconds...");
         setTimeout(() => {
           const fakeEvent = { preventDefault: () => {}, isRetry: true };
           handleSubmit(fakeEvent);

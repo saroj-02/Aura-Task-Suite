@@ -46,7 +46,7 @@ const Dashboard = () => {
         console.error('Failed to fetch tasks:', data);
       }
     } catch (err) {
-      console.error('Fetch Tasks Error (Using Cache):', err);
+      console.warn('Fetch Tasks Warning (Using Cache):', err.message);
     } finally {
       setLoading(false);
     }
@@ -69,7 +69,7 @@ const Dashboard = () => {
         setUsersError(errMsg);
       }
     } catch (err) {
-      console.error('Fetch Users Error (Using Cache):', err);
+      console.warn('Fetch Users Warning (Using Cache):', err.message);
     } finally {
       setUsersLoading(false);
     }
