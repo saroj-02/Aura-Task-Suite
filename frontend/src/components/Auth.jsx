@@ -30,11 +30,12 @@ const Auth = () => {
       let headers = { 'Content-Type': 'application/json' };
 
       if (isLogin) {
-        const formData = new FormData();
-        formData.append('username', email);
-        formData.append('password', password);
-        body = formData;
-        headers = {};
+        // Use URLSearchParams for application/x-www-form-urlencoded
+        const params = new URLSearchParams();
+        params.append('username', email);
+        params.append('password', password);
+        body = params;
+        headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
       } else {
         body = JSON.stringify({ email, password, full_name: fullName, role, admin_key: adminKey });
       }
@@ -51,44 +52,39 @@ const Auth = () => {
       if (!res.ok) throw new Error(data.detail || 'Something went wrong');
 
       if (isLogin) {
-        login(data.access_token);
+        if (data.access_token) {
+          login(data.access_token);
+        } else {
+          throw new Error('No access token received from server.');
+        }
       } else {
         setIsLogin(true);
         setError('Registration successful! Please login.');
+        setLoading(false);
       }
     } catch (err) {
-      // Clear timeout in case of error
       clearTimeout(timeoutId);
 
-      // Don't log AbortErrors as full errors if we handle them
-      if (err.name === 'AbortError') {
-        console.warn('Auth Request Aborted:', err.message);
-      } else {
-        console.error('Auth Error:', err);
-      }
-      
       // Auto-retry once if it's a cold start error or timeout
       const isColdStart = err.message === 'Failed to fetch' || err.name === 'AbortError';
       if (isColdStart && !e.isRetry) {
-        console.log("Detecting backend cold start/timeout, retrying in 2 seconds...");
+        console.warn("Detecting backend cold start/timeout, retrying in 2 seconds...");
         setTimeout(() => {
           const fakeEvent = { preventDefault: () => {}, isRetry: true };
           handleSubmit(fakeEvent);
         }, 2000);
-        return;
+        return; // Stay in loading state
       }
 
       if (err.name === 'AbortError') {
-        setError('Server is still waking up. Please wait a few more seconds...');
+        console.warn('Auth Request Aborted:', err.message);
+        setError('Server is taking too long to respond. Please try again.');
       } else {
+        console.error('Auth Error:', err);
         setError(err.message === 'Failed to fetch' 
           ? 'Backend is waking up... Please wait 10 seconds and click again.' 
           : err.message);
       }
-    } finally {
-      // If we are about to retry, don't stop loading
-      // Otherwise, always stop loading
-      const aboutToRetry = (error === '' && !isLogin && false); // Complex check not needed
       setLoading(false);
     }
   };
