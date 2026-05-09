@@ -13,10 +13,15 @@ const AppContent = () => {
     const wakeBackend = async () => {
       console.log("Pre-warming backend...");
       try {
-        await fetch(`${API_BASE_URL}/health`);
-        console.log("Backend is awake!");
+        const res = await fetch(`${API_BASE_URL}/health`);
+        const data = await res.json();
+        if (data && data.status === 'ok') {
+          console.log("Backend is awake and responsive!");
+        } else {
+          console.log("Backend responding but status not OK...");
+        }
       } catch (e) {
-        console.log("Backend still waking up...");
+        console.log("Backend still waking up or unreachable...");
       }
     };
     wakeBackend();
