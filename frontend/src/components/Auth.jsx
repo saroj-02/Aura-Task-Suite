@@ -48,8 +48,19 @@ const Auth = () => {
       });
 
       clearTimeout(timeoutId);
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || 'Something went wrong');
+      
+      let data = {};
+      const contentType = res.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        data = await res.json();
+      }
+
+      if (!res.ok) {
+        if (res.status === 404) {
+          throw new Error('API endpoint not found (404). Please ensure the backend is running.');
+        }
+        throw new Error(data.detail || `Server error: ${res.status}`);
+      }
 
       if (isLogin) {
         if (data.access_token) {
