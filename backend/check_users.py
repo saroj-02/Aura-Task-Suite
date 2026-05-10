@@ -13,7 +13,9 @@ async def check_users():
     users = await db.users.find().to_list(length=100)
     print("Users in MongoDB:")
     for u in users:
-        print(f"- Email: {u['email']}, Role: {u.get('role')}, Name: {u.get('full_name')}")
+        hp = u.get('hashed_password', 'N/A')
+        hp_preview = hp[:10] + "..." if hp != 'N/A' else 'N/A'
+        print(f"- Email: {u['email']}, Role: {u.get('role')}, Hashed Pass: {hp_preview}")
 
 if __name__ == "__main__":
     asyncio.run(check_users())
