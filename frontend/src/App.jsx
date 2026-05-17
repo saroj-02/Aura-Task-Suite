@@ -11,18 +11,22 @@ const AppContent = () => {
   // Wake up the backend immediately on load
   useEffect(() => {
     const wakeBackend = async () => {
+      // Fast readiness check that does not block on DB availability
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 3000);
       try {
-        const url = `${API_BASE_URL}/health`;
-        console.log(`Trying to wake up: ${url || '(Relative)/health'}`);
-        const res = await fetch(url);
-        const data = await res.json();
-        if (data && data.status === 'ok') {
-          console.log("Backend is awake and responsive!");
+        const url = `${API_BASE_URL}/ready`;
+        console.log(`Trying to wake up: ${url || '(Relative)/ready'}`);
+        const res = await fetch(url, { signal: controller.signal });
+        clearTimeout(timeout);
+        if (res.ok) {
+          console.log('Backend process is up (ready)');
         } else {
-          console.log("Backend responding but status not OK...");
+          console.log('Backend process responded but not OK');
         }
       } catch (e) {
-        console.log("Backend still waking up or unreachable...");
+        clearTimeout(timeout);
+        console.log('Backend still waking up or unreachable (ready check)...');
       }
     };
     wakeBackend();

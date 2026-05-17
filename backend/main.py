@@ -107,3 +107,11 @@ async def startup_event():
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+
+
+@app.get("/ready")
+def ready():
+    """Lightweight readiness endpoint that does not depend on DB connectivity.
+    Use this from static frontends to confirm the API process is up (no DB checks).
+    """
+    return {"status": "ready"}
