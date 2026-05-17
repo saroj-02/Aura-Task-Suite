@@ -3,15 +3,15 @@ from app.core.config import settings
 
 client = AsyncIOMotorClient(
     settings.MONGODB_URL, 
-    serverSelectionTimeoutMS=5000,
+    serverSelectionTimeoutMS=2000,  # fail fast if DB unreachable
     minPoolSize=2,
     maxPoolSize=50,
-    waitQueueTimeoutMS=5000,
+    waitQueueTimeoutMS=2000,
     heartbeatFrequencyMS=10000,
     retryWrites=True,
     retryReads=True,
-    connectTimeoutMS=10000,
-    socketTimeoutMS=45000
+    connectTimeoutMS=5000,
+    socketTimeoutMS=30000
 )
 db = client[settings.DATABASE_NAME]
 

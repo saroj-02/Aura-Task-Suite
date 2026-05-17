@@ -23,7 +23,7 @@ const Auth = () => {
     // Create a controller to handle timeouts
     const controller = new AbortController();
     // Use a specific reason to avoid "signal is aborted without reason" message
-    const timeoutId = setTimeout(() => controller.abort("Request timed out"), 90000); // 90s timeout for cold starts
+    const timeoutId = setTimeout(() => controller.abort("Request timed out"), 10000); // 10s timeout to fail fast
 
     try {
       let body;
@@ -76,14 +76,14 @@ const Auth = () => {
     } catch (err) {
       clearTimeout(timeoutId);
 
-      // Auto-retry once if it's a cold start error or timeout
+      // Auto-retry once if it's a network error or timeout
       const isColdStart = err.message === 'Failed to fetch' || err.name === 'AbortError';
       if (isColdStart && !e.isRetry) {
-        console.warn("Detecting backend cold start/timeout, retrying in 2 seconds...");
+        console.warn("Detecting backend cold start/timeout, retrying once in 1 second...");
         setTimeout(() => {
           const fakeEvent = { preventDefault: () => {}, isRetry: true };
           handleSubmit(fakeEvent);
-        }, 2000);
+        }, 1000);
         return; // Stay in loading state
       }
 
@@ -93,7 +93,7 @@ const Auth = () => {
       } else {
         console.error('Auth Error:', err);
         setError(err.message === 'Failed to fetch' 
-          ? 'Backend is waking up... Please wait 10 seconds and click again.' 
+          ? 'Backend is waking up... Please wait a few seconds and try again.' 
           : err.message);
       }
       setLoading(false);
