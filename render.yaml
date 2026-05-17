@@ -7,10 +7,7 @@ services:
     staticPublishPath: dist
     envVars:
       - key: VITE_API_URL
-        fromService:
-          type: web
-          name: aura-backend
-          property: host
+        value: https://aura-backend.onrender.com
 
   # Backend: FastAPI Service
   - type: web
