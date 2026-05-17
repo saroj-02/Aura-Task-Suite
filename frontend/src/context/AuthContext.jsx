@@ -1,66 +1,14 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import API_BASE_URL from '../config';
+import React, { createContext, useContext } from 'react';
 
 const AuthContext = createContext();
 
+// Provide a default guest user so the app opens directly to the dashboard
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(() => {
-    const cached = localStorage.getItem('cached_user');
-    return cached ? JSON.parse(cached) : null;
-  });
-  const [token, setToken] = useState(localStorage.getItem('token'));
-  const [loading, setLoading] = useState(!user); // Don't show global loader if we have a cached user
-
-  useEffect(() => {
-    if (token) {
-      fetchUser();
-    } else {
-      setLoading(false);
-      setUser(null);
-    }
-  }, [token]);
-
-  const fetchUser = async () => {
-    try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/me`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setUser(data);
-        localStorage.setItem('cached_user', JSON.stringify(data));
-      } else if (res.status === 401 || res.status === 403) {
-        // Only logout if token is explicitly invalid
-        logout();
-      } else {
-        // Server might be waking up or having temporary issues
-        console.warn(`Server responded with ${res.status}. Not logging out yet.`);
-      }
-    } catch (err) {
-      // Backend might be waking up, log as warning instead of error to keep console clean
-      if (err.name === 'AbortError') {
-        console.warn("Fetch user aborted");
-      } else {
-        console.warn("Fetch user error (backend might be waking up):", err.message);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const login = (newToken) => {
-    localStorage.setItem('token', newToken);
-    setToken(newToken);
-  };
-
-  const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('cached_user');
-    localStorage.removeItem('cached_tasks');
-    localStorage.removeItem('cached_users');
-    setToken(null);
-    setUser(null);
-  };
+  const user = { id: 'guest', full_name: 'Guest User', role: 'user', is_active: true };
+  const token = null;
+  const login = () => {};
+  const logout = () => {};
+  const loading = false;
 
   return (
     <AuthContext.Provider value={{ user, token, login, logout, loading }}>
