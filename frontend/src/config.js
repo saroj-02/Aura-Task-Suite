@@ -6,9 +6,11 @@ const isLocal = window.location.hostname === 'localhost' ||
                   window.location.port === '4173' ||
                   import.meta.env.DEV;
 
+const DEFAULT_BACKEND_HOST = 'https://aura-backend.onrender.com';
+
 const API_BASE_URL = import.meta.env.VITE_API_URL 
   ? (import.meta.env.VITE_API_URL.startsWith('http') ? import.meta.env.VITE_API_URL : `https://${import.meta.env.VITE_API_URL}`)
-  : ''; // Always use relative URL by default to leverage Vite proxy in dev and same-origin in prod
+  : DEFAULT_BACKEND_HOST; // Fallback to known backend host when VITE_API_URL is not provided
 
 console.log('Aura API Base URL:', API_BASE_URL || '(Relative)');
 
