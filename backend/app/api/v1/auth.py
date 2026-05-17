@@ -49,7 +49,10 @@ async def login(
     form_data: OAuth2PasswordRequestForm = Depends()
 ) -> Any:
     print(f"DEBUG: Login attempt for email: {form_data.username}")
-    user = await db.users.find_one({"email": form_data.username})
+    try:
+        user = await db.users.find_one({"email": form_data.username})
+    except Exception as e:
+        raise HTTPException(status_code=503, detail="Database unavailable. Please try again later.")
     
     if not user:
         print(f"DEBUG: User not found: {form_data.username}")

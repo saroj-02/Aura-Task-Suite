@@ -1,17 +1,19 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from app.api.v1.api import api_router
 from app.core.config import settings
 import uvicorn
 
+import time
+import asyncio
+from starlette.requests import Request
+from pymongo.errors import ServerSelectionTimeoutError
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
     openapi_url=f"{settings.API_V1_STR}/openapi.json"
 )
-
-import time
-from starlette.requests import Request
 
 @app.middleware("http")
 async def add_process_time_header(request: Request, call_next):
@@ -48,22 +50,34 @@ def root():
 @app.get("/health")
 async def health_check():
     from app.db.session import client
-    import time
     start_time = time.time()
     try:
-        # Ping database to check connectivity
-        await client.admin.command('ping')
+        # Ping database to check connectivity, but fail fast if the DB is unreachable
+        await asyncio.wait_for(client.admin.command('ping'), timeout=3.0)
         latency = (time.time() - start_time) * 1000
         return {
-            "status": "ok", 
-            "message": "Server and Database are responsive",
-            "db_latency_ms": round(latency, 2)
+            "status": "ok",
+            "message": "Server is running",
+            "db_status": "ok",
+            "db_latency_ms": round(latency, 2),
         }
+    except (asyncio.TimeoutError, ServerSelectionTimeoutError) as e:
+        return JSONResponse(
+            status_code=503,
+            content={
+                "status": "error",
+                "message": "Database unavailable",
+                "details": str(e),
+            }
+        )
     except Exception as e:
-        from fastapi.responses import JSONResponse
         return JSONResponse(
             status_code=500,
-            content={"status": "error", "message": f"Database connection failed: {str(e)}"}
+            content={
+                "status": "error",
+                "message": "Health check failed",
+                "details": str(e),
+            }
         )
 
 # Serve Frontend Static Files
