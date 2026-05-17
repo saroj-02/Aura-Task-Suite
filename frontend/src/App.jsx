@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import Auth from './components/Auth';
 import Dashboard from './components/Dashboard';
 import Footer from './components/Footer';
 import API_BASE_URL from './config';
@@ -47,7 +46,7 @@ const AppContent = () => {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <main style={{ flex: 1 }}>
-        {token ? <Dashboard /> : <Auth />}
+        <Dashboard />
       </main>
       <Footer />
     </div>
