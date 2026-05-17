@@ -34,6 +34,14 @@ const Dashboard = () => {
 
   const fetchTasks = async () => {
     setLoading(true);
+    // If no token (guest mode), load tasks from localStorage only
+    if (!token) {
+      const cached = localStorage.getItem('cached_tasks');
+      setTasks(cached ? JSON.parse(cached) : []);
+      setLoading(false);
+      return;
+    }
+
     try {
       const res = await fetch(`${API_BASE_URL}/api/v1/tasks/`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -96,6 +104,16 @@ const Dashboard = () => {
     setDescription('');
 
     try {
+      if (!token) {
+        // Guest mode: persist to localStorage only
+        const current = JSON.parse(localStorage.getItem('cached_tasks') || '[]');
+        const newTask = { ...tempTask };
+        current.unshift(newTask);
+        localStorage.setItem('cached_tasks', JSON.stringify(current));
+        setLoading(false);
+        return;
+      }
+
       const res = await fetch(`${API_BASE_URL}/api/v1/tasks/`, {
         method: 'POST',
         headers: {
@@ -126,6 +144,13 @@ const Dashboard = () => {
     const originalTasks = [...tasks];
     setTasks(prev => prev.filter(t => t.id !== id));
 
+    if (!token) {
+      // Persist deletion in localStorage for guest mode
+      const current = JSON.parse(localStorage.getItem('cached_tasks') || '[]').filter(t => t.id !== id);
+      localStorage.setItem('cached_tasks', JSON.stringify(current));
+      return;
+    }
+
     try {
       const res = await fetch(`${API_BASE_URL}/api/v1/tasks/${id}`, {
         method: 'DELETE',
@@ -146,6 +171,13 @@ const Dashboard = () => {
     // Optimistic Status Update
     const originalTasks = [...tasks];
     setTasks(prev => prev.map(t => t.id === id ? { ...t, status } : t));
+
+    if (!token) {
+      // Persist in localStorage for guest mode
+      const current = JSON.parse(localStorage.getItem('cached_tasks') || '[]').map(t => t.id === id ? { ...t, status } : t);
+      localStorage.setItem('cached_tasks', JSON.stringify(current));
+      return;
+    }
 
     try {
       const res = await fetch(`${API_BASE_URL}/api/v1/tasks/${id}`, {
@@ -178,6 +210,12 @@ const Dashboard = () => {
     const updatedData = { title: editTitle, description: editDescription, priority: editPriority };
     setTasks(prev => prev.map(t => t.id === id ? { ...t, ...updatedData } : t));
     setEditingTaskId(null);
+    if (!token) {
+      // Persist edits locally in guest mode
+      const current = JSON.parse(localStorage.getItem('cached_tasks') || '[]').map(t => t.id === id ? { ...t, ...updatedData } : t);
+      localStorage.setItem('cached_tasks', JSON.stringify(current));
+      return;
+    }
 
     try {
       const res = await fetch(`${API_BASE_URL}/api/v1/tasks/${id}`, {
@@ -327,7 +365,7 @@ const Dashboard = () => {
               </select>
             </div>
             <button type="submit" disabled={loading} className="btn btn-primary" style={{ width: '100%' }}>
-              {loading ? 'Creating...' : 'Create Task'}
+              {loading ? 'Create' : 'Create Task'}
             </button>
           </form>
         </div>
